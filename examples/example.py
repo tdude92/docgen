@@ -12,7 +12,7 @@ def foo():
 
 def bar(a, b):
     #dg START FUNC
-    #dg ARGS_START 
+    #dg ARGS_BEG
     # (int, float)a the first number
     # (int, float)b the second number
     #dg ARGS_END
@@ -31,7 +31,7 @@ class foobar:
     #dg DESC_END
     def __init__(self, dollars, age):
         #dg START FUNC
-        #dg ARGS_START
+        #dg ARGS_BEG
         # dollars(int, float): How many dollars foobar has.
         # age(int): The age of foobar.
         #dg ARGS_END

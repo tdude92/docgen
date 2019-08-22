@@ -43,14 +43,29 @@ LANG::Enum getFileType(const std::string &fileName) {
     }
 }
 
-std::vector<std::string> getInstructions_py(std::ifstream file) {
+
+std::vector<std::string> getInstructions_py(std::ifstream &file) {
     std::vector<std::string> instructions;
 
     std::string line;
+    std::string instruction;
+    bool inBlock = false; // Check if the line is part of a block (between DES_BEG/DESC_END and ARGS_BEG/ARGS_END)
     while (std::getline(file, line)) {
         line.erase(0, line.find_first_not_of(' ')); // Trim leading whitespace.
         if (line.substr(0, 3) == "#dg") {
-            instructions.push_back(line.substr(4, line.npos));
+            instruction = line.substr(4, line.npos);
+            instructions.push_back(instruction);
+
+            // Check when a block begins.
+            if (instruction == "DESC_BEG" || instruction == "ARGS_BEG") {
+                inBlock = true;
+            } else if (instruction == "DESC_END" || instruction == "ARGS_END") {
+                inBlock = false;
+            }
+        } else if (inBlock) {
+            instruction = line.substr(1, line.npos);
+            instruction.erase(0, instruction.find_first_not_of(' ')); // Trim leading whitespace in blocks.
+            instructions.push_back(instruction);
         }
     }
     

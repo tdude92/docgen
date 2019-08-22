@@ -18,6 +18,10 @@ int main(int argc, char *argv[]) {
     //std::vector<FuncDoc> functionDocumentation;
     //std::vector<ClassDoc> classDocumentation;
     std::ifstream file(fileName);
+    std::vector<std::string> instructions = getInstructions_py(file);
+    for (auto s : instructions) {
+        std::cout << s << std::endl;
+    }
 
     file.close();
     return 0;

@@ -19,7 +19,9 @@ Docgen Keywords:
 
     FUNC,
     MEM_FUNC,
-    CLASS
+    MEM_VAR,
+    CLASS,
+    GLOBAL_VAR
 */
 
 // Enums
@@ -43,8 +45,9 @@ struct Arg {
 
 class FuncDoc {
     public:
-        FuncDoc(std::string name, std::string returnType, std::string funcType, LANG::Enum lang):
+        FuncDoc(std::string name, std::string returnType, std::string funcType, LANG::Enum lang, FuncDoc overloadOf = SOME_PLACEHOLDER_IDK_GOTTA_GO_RN):
             lang_(lang),
+            returnType_(std::string("####Returns: ") + returnType),
             args_("####Arguments:"),
             desc_("####Description:") {
                 if (lang == LANG::CPP) {
@@ -62,6 +65,7 @@ class FuncDoc {
                     std::cerr << "Invalid type for FuncDoc!" << std::endl;
                 }
         }
+        FuncDoc(): lang_(LANG::OTHER) {}
 
         void setName(std::string name) {
             name_ += name;
@@ -95,6 +99,7 @@ class FuncDoc {
         std::string args_;
         std::string desc_;
         std::string returnType_;
+        FuncDoc     overloadOf_();
 };
 
 #endif
