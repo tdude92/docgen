@@ -47,9 +47,9 @@ class FuncDoc {
     public:
         FuncDoc(std::string name, std::string returnType, std::string funcType, LANG::Enum lang, FuncDoc overloadOf = SOME_PLACEHOLDER_IDK_GOTTA_GO_RN):
             lang_(lang),
-            returnType_(std::string("####Returns: ") + returnType),
             args_("####Arguments:"),
-            desc_("####Description:") {
+            desc_("####Description:"),
+            returnType_(std::string("####Returns: ") + returnType) {
                 if (lang == LANG::CPP) {
                     name_ = returnType + " ";
                 } else if (lang == LANG::PYTHON) {
