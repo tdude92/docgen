@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
+#include <vector>
 
 #include "dgparsers.hpp"
 
@@ -12,11 +13,12 @@ int main(int argc, char *argv[]) {
     }
 
     std::string fileName = argv[1];
-    int fileType = getFileType(fileName);
+    LANG::Enum fileType = getFileType(fileName);
 
-    std::cout << fileType << std::endl;
-
+    //std::vector<FuncDoc> functionDocumentation;
+    //std::vector<ClassDoc> classDocumentation;
     std::ifstream file(fileName);
+
     file.close();
     return 0;
 }
