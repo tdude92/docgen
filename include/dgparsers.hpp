@@ -9,6 +9,7 @@
 
 // Functions
 LANG::Enum getFileType(const std::string &fileName);
-std::vector<std::string> getInstructions_py(std::ifstream &file);
+std::vector<Instruction> getInstructions_py(const std::string fileName);
+std::vector<std::string> parseInstruction_py(Instruction instruction);
 
 #endif

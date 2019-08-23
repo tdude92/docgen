@@ -7,38 +7,41 @@ a = 1
 def foo():
     #dg START FUNC
     #dg BRIEF prints "hello, world!" onto the console after 1 second.
+    #dg END FUNC
     time.sleep(1)
     print("hello, world!")
 
 def bar(a, b):
     #dg START FUNC
-    #dg ARGS_BEG
-    # (int, float)a the first number
-    # (int, float)b the second number
-    #dg ARGS_END
-    #dg RETURNS int, float
-    #dg DESC_BEG
+    #dg START ARGS
+    # (int float)a the first number
+    # (int float)b the second number
+    #dg END ARGS
+    #dg RETURNS int float
+    #dg START DESC
     # returns the sum of two numbers and a third random number.
     # second line just coz.
-    #dg DESC_END
+    #dg END DESC
+    #dg END FUNC
     return a + b + random.randint(1, 10)
 
 class foobar:
     #dg START CLASS
-    #dg DESC_BEG
+    #dg START DESC
     # foobar is a pretty cool class.
     # Why do foobars have age and cash?
-    #dg DESC_END
+    #dg END DESC
     def __init__(self, dollars, age):
         #dg START FUNC
-        #dg ARGS_BEG
-        # dollars(int, float): How many dollars foobar has.
+        #dg START ARGS
+        # dollars(int float): How many dollars foobar has.
         # age(int): The age of foobar.
-        #dg ARGS_END
+        #dg END ARGS
         #dg BRIEF Default constructor.
+        #dg END FUNC
         self.dollars = dollars
         self.age = age
-    #dg END_CLASS
+    #dg END CLASS
 
 a = 20
 string = "au revoir?"

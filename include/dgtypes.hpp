@@ -43,9 +43,27 @@ struct Arg {
     std::string desc;
 };
 
+struct Instruction {
+    // A struct that holds an instruction,
+    // the line it was written on, and the
+    // file that it is contained in for
+    // debugging purposes.
+    Instruction(std::string fileName_arg, int lineNo, std::string instruction):
+        lineNo(lineNo),
+        instruction(instruction) {
+            // Get just the file name (trim the path to the file).
+            fileName_arg.erase(0, (fileName_arg.find_last_of('/') == fileName_arg.npos) ? 0 : fileName_arg.find_last_of('/') + 1);
+            fileName = fileName_arg;
+        }
+
+    int lineNo;
+    std::string instruction;
+    std::string fileName;
+};
+
 class FuncDoc {
     public:
-        FuncDoc(std::string name, std::string returnType, std::string funcType, LANG::Enum lang, FuncDoc overloadOf = SOME_PLACEHOLDER_IDK_GOTTA_GO_RN):
+        FuncDoc(std::string name, std::string returnType, std::string funcType, LANG::Enum lang):
             lang_(lang),
             args_("####Arguments:"),
             desc_("####Description:"),
@@ -65,18 +83,17 @@ class FuncDoc {
                     std::cerr << "Invalid type for FuncDoc!" << std::endl;
                 }
         }
-        FuncDoc(): lang_(LANG::OTHER) {}
 
-        void setName(std::string name) {
+        void setName(const std::string name) {
             name_ += name;
         }
-        void setReturnType(std::string returnType) {
+        void setReturnType(const std::string returnType) {
             returnType_ = std::string("####Return Type:\n    ") + returnType;
         }
-        void addArg(Arg arg) {
+        void addArg(const Arg arg) {
             args_ += std::string("\n    ") + arg.types + " " + arg.name + ": " + arg.desc;
         }
-        void addDescLine(std::string line) {
+        void addDescLine(const std::string line) {
             desc_ += std::string("\n    ") + line;
         }
 
@@ -99,7 +116,6 @@ class FuncDoc {
         std::string args_;
         std::string desc_;
         std::string returnType_;
-        FuncDoc     overloadOf_();
 };
 
 #endif

@@ -17,12 +17,14 @@ int main(int argc, char *argv[]) {
 
     //std::vector<FuncDoc> functionDocumentation;
     //std::vector<ClassDoc> classDocumentation;
-    std::ifstream file(fileName);
-    std::vector<std::string> instructions = getInstructions_py(file);
+    std::vector<Instruction> instructions = getInstructions_py(fileName);
+    std::vector<std::string> instruction;
     for (auto s : instructions) {
-        std::cout << s << std::endl;
+        instruction = parseInstruction_py(s);
+        for (auto token : instruction) {
+            std::cout << token << std::endl;
+        }
+        std::cout << std::endl;
     }
-
-    file.close();
     return 0;
 }
