@@ -130,3 +130,39 @@ std::vector<std::string> parseInstruction_py(Instruction instruction) {
 
     return parsedInstruction;
 }
+
+Arg parseFuncArg_py(std::string expr) {
+    Arg parsedArg;
+    int startIndex, endIndex;
+
+    expr.erase(0, expr.find_first_not_of(' ')); // Erase leading whitespace.
+                                                // parseFuncArg_py does not take an input
+                                                // from getInstructions_py, so it needs to
+                                                // trim whitespace itself.
+
+    startIndex = 0;
+    endIndex = expr.find_first_of(')', startIndex) + 1;
+    parsedArg.types = expr.substr(startIndex, endIndex);
+
+    startIndex = endIndex;
+    endIndex = expr.find_first_of(':', startIndex);
+    parsedArg.name = expr.substr(startIndex, endIndex - startIndex);
+
+    startIndex = endIndex + 1;
+    parsedArg.desc = expr.substr(startIndex, expr.npos - startIndex);
+
+    // Trim leading whitespace after delimiters.
+    parsedArg.types.erase(0, parsedArg.types.find_first_not_of(' '));
+    parsedArg.name.erase(0, parsedArg.name.find_first_not_of(' '));
+    parsedArg.desc.erase(0, parsedArg.desc.find_first_not_of(' '));
+    
+    return parsedArg;
+}
+
+std::string parseDesc_py(std::string desc) {
+    desc.erase(0, desc.find_first_not_of(' '));
+    desc = desc.substr(1, desc.npos - 1);
+    desc.erase(0, desc.find_first_not_of(' '));
+
+    return desc;
+}

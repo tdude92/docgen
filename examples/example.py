@@ -14,8 +14,8 @@ def foo():
 def bar(a, b):
     #dg START FUNC
     #dg START ARGS
-    # (int float)a the first number
-    # (int float)b the second number
+    # (int float) a: the first number
+    # (int float) b: the second number
     #dg END ARGS
     #dg RETURNS int float
     #dg START DESC
@@ -34,8 +34,8 @@ class foobar:
     def __init__(self, dollars, age):
         #dg START FUNC
         #dg START ARGS
-        # dollars(int float): How many dollars foobar has.
-        # age(int): The age of foobar.
+        # (int float) dollars: How many dollars foobar has.
+        # int age: The age of foobar.
         #dg END ARGS
         #dg BRIEF Default constructor.
         #dg END FUNC

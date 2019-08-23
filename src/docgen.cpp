@@ -18,13 +18,12 @@ int main(int argc, char *argv[]) {
     //std::vector<FuncDoc> functionDocumentation;
     //std::vector<ClassDoc> classDocumentation;
     std::vector<Instruction> instructions = getInstructions_py(fileName);
-    std::vector<std::string> instruction;
+    std::vector<std::string> tokens;
     for (auto s : instructions) {
-        instruction = parseInstruction_py(s);
-        for (auto token : instruction) {
+        tokens = parseInstruction_py(s);
+        for (auto token : tokens) {
             std::cout << token << std::endl;
         }
-        std::cout << std::endl;
     }
     return 0;
 }
