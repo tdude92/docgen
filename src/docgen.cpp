@@ -13,17 +13,9 @@ int main(int argc, char *argv[]) {
     }
 
     std::string fileName = argv[1];
-    LANG::Enum fileType = getFileType(fileName);
 
-    //std::vector<FuncDoc> functionDocumentation;
-    //std::vector<ClassDoc> classDocumentation;
-    std::vector<Instruction> instructions = getInstructions_py(fileName);
-    std::vector<std::string> tokens;
-    for (auto s : instructions) {
-        tokens = parseInstruction_py(s);
-        for (auto token : tokens) {
-            std::cout << token << std::endl;
-        }
-    }
+    ClassDoc x;
+
+    std::cout << x.name() << std::endl;
     return 0;
 }

@@ -1,11 +1,12 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <cstring>
 #include <algorithm>
+#include <cstring>
 #include <cstdlib>
 
 #include "dgtypes.hpp"
+#include "dgexcept.hpp"
 #include "dgparsers.hpp"
 
 // TODO: Make sure files of type TYPE::OTHER are skipped.
@@ -34,22 +35,14 @@ LANG::Enum getFileType(const std::string &fileName) {
 
     if (fileExt == "py") {
         return LANG::PYTHON;
-    } else if (fileExt == "cpp" ||
-               fileExt == "cc"  ||
-               fileExt == "cxx" ||
-               fileExt == "hpp" ||
-               fileExt == "hh"  ||
-               fileExt == "hxx") {
-        return LANG::CPP;
     } else {
-        std::cerr << fileName << " is of an unsupported file type. Skipping..." << std::endl;
         return LANG::OTHER;
     }
 }
 
 
 // Python functions.
-std::vector<Instruction> getInstructions_py(const std::string fileName) {
+std::vector<Instruction> getInstructions(const std::string fileName) {
     std::vector<Instruction> instructions;
 
     std::ifstream file(fileName);
@@ -65,7 +58,7 @@ std::vector<Instruction> getInstructions_py(const std::string fileName) {
             instructions.push_back(Instruction(fileName, lineNo, instruction));
 
             // Check when a block begins.
-            if (instruction == "DESC_BEG" || instruction == "ARGS_BEG") {
+            if (instruction == "START ARGS" || instruction == "ARGS_BEG") {
                 inBlock = true;
             } else if (instruction == "DESC_END" || instruction == "ARGS_END") {
                 inBlock = false;
@@ -87,22 +80,23 @@ inline void trimKeyword(std::string &instruction, const std::string keyword) {
     instruction.erase(0, keyword.length());
     instruction.erase(0, instruction.find_first_not_of(' '));
 }
-std::vector<std::string> parseInstruction_py(Instruction instruction) {
+std::vector<std::string> *parseInstruction(Instruction instruction) {
     // Return a vector of tokens to make executing instructions simpler.
-    std::vector<std::string> parsedInstruction;
+    std::vector<std::string> *parsedInstruction;
+    parsedInstruction = new std::vector<std::string>;
 
     if (instruction.instruction.substr(0, 5) == "START") {
-        parsedInstruction.push_back("START");
+        parsedInstruction->push_back("START");
         trimKeyword(instruction.instruction, "START");
 
-        parsedInstruction.push_back(instruction.instruction);
+        parsedInstruction->push_back(instruction.instruction);
     } else if (instruction.instruction.substr(0, 3) == "END") {
-        parsedInstruction.push_back("END");
+        parsedInstruction->push_back("END");
         trimKeyword(instruction.instruction, "END");
 
-        parsedInstruction.push_back(instruction.instruction);
+        parsedInstruction->push_back(instruction.instruction);
     } else if (instruction.instruction.substr(0, 7) == "RETURNS") {
-        parsedInstruction.push_back("RETURNS");
+        parsedInstruction->push_back("RETURNS");
         trimKeyword(instruction.instruction, "RETURNS");
 
         // Iterate through all provided possible return
@@ -114,24 +108,25 @@ std::vector<std::string> parseInstruction_py(Instruction instruction) {
         returnType = strtok(instruction_cstr, " ");
 
         while (returnType != NULL) {
-            parsedInstruction.push_back(returnType);
+            parsedInstruction->push_back(returnType);
             returnType = strtok(NULL, " ");
         }
     } else if (instruction.instruction.substr(0, 5) == "BRIEF") {
-        parsedInstruction.push_back("BRIEF");
+        parsedInstruction->push_back("BRIEF");
         trimKeyword(instruction.instruction, "BRIEF");
 
-        parsedInstruction.push_back(instruction.instruction);
+        parsedInstruction->push_back(instruction.instruction);
     } else {
         std::cerr << "(" << instruction.fileName << ")Invalid instruction[" << instruction.lineNo
                   << "]: \"" << instruction.instruction << "\"" << std::endl;
-        invalidInstructionsFlag = true;
+        delete parsedInstruction;
+        return nullptr;
     }
 
     return parsedInstruction;
 }
 
-Arg parseFuncArg_py(std::string expr) {
+Arg parseFuncArg(std::string expr) {
     Arg parsedArg;
     int startIndex, endIndex;
 
@@ -159,10 +154,92 @@ Arg parseFuncArg_py(std::string expr) {
     return parsedArg;
 }
 
-std::string parseDesc_py(std::string desc) {
+std::string parseDesc(std::string desc) {
     desc.erase(0, desc.find_first_not_of(' '));
     desc = desc.substr(1, desc.npos - 1);
     desc.erase(0, desc.find_first_not_of(' '));
 
     return desc;
+}
+
+template <typename T>
+void freeDocList(std::vector<T*> vec) {
+    // For freeing vectors of dynamically allocated
+    // FuncDoc and ClassDoc objects in a vector.
+    for (T* element : vec) {
+        delete element;
+    }
+}
+
+void genDoc_file(std::string fileName, std::vector<FuncDoc*> &funcBuf, std::vector<ClassDoc*> &classBuf) {
+    // Concatenate the function/class docs in a file to buffers.
+    try {
+        if (getFileType(fileName) == LANG::OTHER)
+            throw unsupported_filetype_error(fileName);
+        else if (getFileType(fileName) == LANG::PYTHON) {
+            std::ifstream file(fileName);
+            std::string line;
+
+            Instruction instruction;
+            std::vector<std::string> *parsedInstruction;
+
+            std::vector<ClassDoc*> classes;
+            std::vector<FuncDoc*> functions;
+
+            ClassDoc *currClass = nullptr;
+            FuncDoc  *currFunc = nullptr;
+
+            bool isArg = false, isDesc = false;
+
+            for (int lineNo = 1; std::getline(file, line); ++lineNo) {
+                // Use a for loop to keep track of line numbers.
+                line.erase(0, line.find_first_not_of(' ')); // Trim leading whitespace.
+                if (line.substr(0, 3) == "#dg") {
+                    line = line.substr(4, line.npos);
+                    instruction = Instruction(fileName, lineNo, line);
+
+                    parsedInstruction = parseInstruction(instruction);
+                    
+                    if (parsedInstruction != nullptr) {
+                        if ((*parsedInstruction)[0] == "START") {
+                            if ((*parsedInstruction)[1] == "CLASS") {
+                                currClass = new ClassDoc();
+                            } else if ((*parsedInstruction)[1] == "FUNC") {
+
+                            } else if ((*parsedInstruction)[1] == "ARGS") {
+                                
+                            } else if ((*parsedInstruction)[1] == "DESC") {
+                                
+                            } else {
+                                throw dg_syntax_error("Invalid START type \"" + (*parsedInstruction)[1] + "\"", fileName, lineNo);
+                            }
+                        } else if ((*parsedInstruction)[0] == "END") {
+
+                        } else if ((*parsedInstruction)[0] == "RETURNS") {
+                            
+                        } else if ((*parsedInstruction)[0] == "BRIEF") {
+                            
+                        }
+                    } else if (isArg) {
+                        if (currFunc == nullptr) {
+                            throw dg_syntax_error("Args defined while not in function", fileName, lineNo);
+                        }
+                    } else if (isDesc) {
+                        if (currFunc == nullptr && currClass == nullptr) {
+                            throw dg_syntax_error("Desc defined while not in class or function", fileName, lineNo);
+                        }
+                    }
+                }
+            }
+
+            // Append func/class docs to buffers.
+            funcBuf.insert(funcBuf.end(), functions.begin(), functions.end());
+            classBuf.insert(classBuf.end(), classes.begin(), classes.end());
+        }
+    } catch (const unsupported_filetype_error &err) {
+        std::cerr << err.what() << std::endl;
+    } catch (const dg_syntax_error &err) {
+        std::cerr << err.what() << std::endl;
+        exit(EXIT_FAILURE);
+    }
 }
