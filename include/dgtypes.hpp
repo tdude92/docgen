@@ -5,8 +5,6 @@
 #include <string>
 #include <vector>
 
-// TODO: Write class for ClassDoc!
-
 /*
 Docgen Keywords:
     START,
@@ -28,7 +26,6 @@ Docgen Keywords:
 struct LANG{
     enum Enum {
         PYTHON,
-        CPP,
         OTHER
     };
 };
@@ -54,33 +51,32 @@ struct Instruction {
             // Get just the file name (trim the path to the file).
             fileName_arg.erase(0, (fileName_arg.find_last_of('/') == fileName_arg.npos) ? 0 : fileName_arg.find_last_of('/') + 1);
             fileName = fileName_arg;
-        }
+    }
+    Instruction() = default;
 
     int lineNo;
     std::string instruction;
     std::string fileName;
 };
 
+class ClassDoc;
 class FuncDoc {
     public:
-        FuncDoc(std::string name, std::string returnType, std::string funcType, LANG::Enum lang):
+        FuncDoc(ClassDoc *containingClass = nullptr, LANG::Enum lang = LANG::PYTHON):
             lang_(lang),
             args_("####Arguments:"),
             desc_("####Description:"),
-            returnType_(std::string("####Returns: ") + returnType) {
-                if (lang == LANG::CPP) {
-                    name_ = returnType + " ";
-                } else if (lang == LANG::PYTHON) {
+            returnType_("####Returns: "),
+            class_(containingClass) {
+                if (lang == LANG::PYTHON) {
                     name_ = "";
                 }
 
                 // Member functions are h3 while normal functions are h2.
-                if (funcType == "FUNC") {
-                    name_ += std::string("##") + name + "(";
-                } else if (funcType == "MEM_FUNC") {
-                    name_ += std::string("###") + name + "(";
+                if (!containingClass) {
+                    name_ += std::string("##");
                 } else {
-                    std::cerr << "Invalid type for FuncDoc!" << std::endl;
+                    name_ += std::string("###");
                 }
         }
 
@@ -116,6 +112,32 @@ class FuncDoc {
         std::string args_;
         std::string desc_;
         std::string returnType_;
+        ClassDoc *class_;
 };
+
+
+class ClassDoc {
+    public:
+        ClassDoc(LANG::Enum lang = LANG::PYTHON):
+            lang_(lang),
+            name_("##class "),
+            desc_("####Description:") {}
+
+        void setName(const std::string name) {
+            name_ += name;
+        }
+        void addDescLine(const std::string line) {
+            desc_ += std::string("\n    ") + line;
+        }
+
+        std::string name() const {
+            return name_;
+        }
+    private:
+        LANG::Enum  lang_;
+        std::string name_;
+        std::string desc_;
+};
+
 
 #endif
