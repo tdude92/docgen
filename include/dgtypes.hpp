@@ -8,6 +8,7 @@
 /*
 Docgen Keywords:
     START,
+    END,
     RETURNS,
     BRIEF,
 
