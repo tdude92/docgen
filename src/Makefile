@@ -4,10 +4,10 @@ VPATH = ../include
 main: docgen.o dgparsers.o
 	g++ -Wall $(FILE).o dgparsers.o -o main
 
-docgen.o: docgen.cpp dgparsers.hpp
+docgen.o: docgen.cpp
 	g++ -Wall -c $(FILE).cpp -I../include
 
-dgparsers.o: dgparsers.cpp dgtypes.hpp dgparsers.hpp
+dgparsers.o: dgparsers.cpp
 	g++ -Wall -c dgparsers.cpp -I../include
 
 clean:
