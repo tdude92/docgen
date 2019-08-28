@@ -8,18 +8,13 @@
 /*
 Docgen Keywords:
     START,
-    ARGS_START,
-    ARGS_END,
     RETURNS,
-    DESC_BEG,
-    DESC_END,
-    BRIEF
+    BRIEF,
 
     FUNC,
-    MEM_FUNC,
-    MEM_VAR,
     CLASS,
-    GLOBAL_VAR
+    ARGS,
+    DESC
 */
 
 // Enums
