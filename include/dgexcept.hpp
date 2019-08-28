@@ -39,6 +39,6 @@ class dg_syntax_error: public std::exception {
         std::string desc_;
         std::string file_;
         int line_;
-}
+};
 
 #endif

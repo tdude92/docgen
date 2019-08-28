@@ -42,36 +42,42 @@ LANG::Enum getFileType(const std::string &fileName) {
 
 
 // Python functions.
-std::vector<Instruction> getInstructions(const std::string fileName) {
-    std::vector<Instruction> instructions;
+Arg parseFuncArg(std::string expr) {
+    Arg parsedArg;
+    size_t startIndex, endIndex;
 
-    std::ifstream file(fileName);
+    expr.erase(0, expr.find_first_of('#') + 1);
 
-    std::string line;
-    std::string instruction;
-    bool inBlock = false; // Check if the line is part of a block (between DES_BEG/DESC_END and ARGS_BEG/ARGS_END)
-    for (int lineNo = 1; std::getline(file, line); ++lineNo) {
-        line.erase(0, line.find_first_not_of(' ')); // Trim leading whitespace.
-        line.erase(line.find_last_not_of(' ') + 1);
-        if (line.substr(0, 3) == "#dg") {
-            instruction = line.substr(4, line.npos);
-            instructions.push_back(Instruction(fileName, lineNo, instruction));
+    startIndex = 0;
+    endIndex = expr.find_first_of(')', startIndex) + 1;
+    parsedArg.types = expr.substr(startIndex, endIndex);
 
-            // Check when a block begins.
-            if (instruction == "START ARGS" || instruction == "ARGS_BEG") {
-                inBlock = true;
-            } else if (instruction == "DESC_END" || instruction == "ARGS_END") {
-                inBlock = false;
-            }
-        } else if (inBlock) {
-            instruction = line.substr(1, line.npos);
-            instruction.erase(0, instruction.find_first_not_of(' ')); // Trim leading whitespace in blocks.
-            instructions.push_back(Instruction(fileName, lineNo, instruction));
-        }
+    startIndex = endIndex;
+    endIndex = expr.find_first_of(':', startIndex);
+    parsedArg.name = expr.substr(startIndex, endIndex - startIndex);
+
+    if (endIndex != expr.npos) {
+        // If the description for the arg is not omitted.
+        startIndex = endIndex + 1;
+        parsedArg.desc = expr.substr(startIndex, expr.npos - startIndex);
+    } else {
+        parsedArg.desc = "";
     }
+
+    // Trim leading whitespace after delimiters.
+    parsedArg.types.erase(0, parsedArg.types.find_first_not_of(' '));
+    parsedArg.name.erase(0, parsedArg.name.find_first_not_of(' '));
+    parsedArg.desc.erase(0, parsedArg.desc.find_first_not_of(' '));
     
-    file.close();
-    return instructions;
+    return parsedArg;
+}
+
+std::string parseDesc(std::string desc) {
+    desc.erase(0, desc.find_first_not_of(' '));
+    desc = desc.substr(1, desc.length() - 1);
+    desc.erase(0, desc.find_first_not_of(' '));
+
+    return desc;
 }
 
 inline void trimKeyword(std::string &instruction, const std::string keyword) {
@@ -82,6 +88,9 @@ inline void trimKeyword(std::string &instruction, const std::string keyword) {
 }
 std::vector<std::string> *parseInstruction(Instruction instruction) {
     // Return a vector of tokens to make executing instructions simpler.
+
+    // parsedInstruction dynamically allocated so that nullptr can be returned
+    // if the intruction is an argument or description.
     std::vector<std::string> *parsedInstruction;
     parsedInstruction = new std::vector<std::string>;
 
@@ -117,49 +126,11 @@ std::vector<std::string> *parseInstruction(Instruction instruction) {
 
         parsedInstruction->push_back(instruction.instruction);
     } else {
-        std::cerr << "(" << instruction.fileName << ")Invalid instruction[" << instruction.lineNo
-                  << "]: \"" << instruction.instruction << "\"" << std::endl;
         delete parsedInstruction;
         return nullptr;
     }
 
     return parsedInstruction;
-}
-
-Arg parseFuncArg(std::string expr) {
-    Arg parsedArg;
-    int startIndex, endIndex;
-
-    expr.erase(0, expr.find_first_not_of(' ')); // Erase leading whitespace.
-                                                // parseFuncArg_py does not take an input
-                                                // from getInstructions_py, so it needs to
-                                                // trim whitespace itself.
-
-    startIndex = 0;
-    endIndex = expr.find_first_of(')', startIndex) + 1;
-    parsedArg.types = expr.substr(startIndex, endIndex);
-
-    startIndex = endIndex;
-    endIndex = expr.find_first_of(':', startIndex);
-    parsedArg.name = expr.substr(startIndex, endIndex - startIndex);
-
-    startIndex = endIndex + 1;
-    parsedArg.desc = expr.substr(startIndex, expr.npos - startIndex);
-
-    // Trim leading whitespace after delimiters.
-    parsedArg.types.erase(0, parsedArg.types.find_first_not_of(' '));
-    parsedArg.name.erase(0, parsedArg.name.find_first_not_of(' '));
-    parsedArg.desc.erase(0, parsedArg.desc.find_first_not_of(' '));
-    
-    return parsedArg;
-}
-
-std::string parseDesc(std::string desc) {
-    desc.erase(0, desc.find_first_not_of(' '));
-    desc = desc.substr(1, desc.npos - 1);
-    desc.erase(0, desc.find_first_not_of(' '));
-
-    return desc;
 }
 
 template <typename T>
@@ -171,31 +142,32 @@ void freeDocList(std::vector<T*> vec) {
     }
 }
 
-void genDoc_file(std::string fileName, std::vector<FuncDoc*> &funcBuf, std::vector<ClassDoc*> &classBuf) {
+void genDoc_file(const std::string &fileName) {
     // Concatenate the function/class docs in a file to buffers.
     try {
         if (getFileType(fileName) == LANG::OTHER)
             throw unsupported_filetype_error(fileName);
         else if (getFileType(fileName) == LANG::PYTHON) {
             std::ifstream file(fileName);
+            std::ofstream docFile;
+            docFile.open("documentation.md", std::ios::out | std::ios::app);
+
             std::string line;
 
             Instruction instruction;
             std::vector<std::string> *parsedInstruction;
-
-            std::vector<ClassDoc*> classes;
-            std::vector<FuncDoc*> functions;
 
             ClassDoc *currClass = nullptr;
             FuncDoc  *currFunc = nullptr;
 
             bool isArg = false, isDesc = false;
 
+            std::string prevLine = "";
             for (int lineNo = 1; std::getline(file, line); ++lineNo) {
                 // Use a for loop to keep track of line numbers.
                 line.erase(0, line.find_first_not_of(' ')); // Trim leading whitespace.
                 if (line.substr(0, 3) == "#dg") {
-                    line = line.substr(4, line.npos);
+                    line = line.substr(4, line.length());
                     instruction = Instruction(fileName, lineNo, line);
 
                     parsedInstruction = parseInstruction(instruction);
@@ -203,38 +175,120 @@ void genDoc_file(std::string fileName, std::vector<FuncDoc*> &funcBuf, std::vect
                     if (parsedInstruction != nullptr) {
                         if ((*parsedInstruction)[0] == "START") {
                             if ((*parsedInstruction)[1] == "CLASS") {
+                                if (currFunc) {
+                                    throw dg_syntax_error("Cannot document a CLASS inside a FUNC", fileName, lineNo);
+                                } else if (currClass) {
+                                    throw dg_syntax_error("Cannot document a CLASS inside a CLASS", fileName, lineNo);
+                                }
                                 currClass = new ClassDoc();
-                            } else if ((*parsedInstruction)[1] == "FUNC") {
 
+                                prevLine.erase(0, prevLine.find_first_not_of(' '));
+                                prevLine.erase(prevLine.find_last_not_of(' ') + 1);
+                                prevLine.insert(6, "__");
+
+                                currClass->setName(prevLine.substr(0, prevLine.length() - 1) + "__");
+
+                                docFile << currClass->name() << "\n";
+                            } else if ((*parsedInstruction)[1] == "FUNC") {
+                                if (currFunc) {
+                                    throw dg_syntax_error("Cannot document a FUNC inside a FUNC", fileName, lineNo);
+                                }
+
+                                if (currClass) {
+                                    currFunc = new FuncDoc(currClass);
+                                } else {
+                                    currFunc = new FuncDoc();
+                                }
+
+                                prevLine.erase(0, prevLine.find_first_not_of(' '));
+                                prevLine.erase(prevLine.find_last_not_of(' ') + 1);
+                                prevLine.erase(0, 4);
+
+                                for (size_t i = 0; i < prevLine.length(); ++i) {
+                                    // Escape underscores in function names because
+                                    // underscores are part of markdown notation.
+                                    if (prevLine[i] == '_') {
+                                        prevLine.insert(i, "\\");
+                                        ++i;
+                                    }
+                                }
+                                
+                                std::string name = std::string("function __") + prevLine.substr(0, prevLine.length() - 1);
+                                name.insert(name.find_first_of('('), "__");
+
+                                currFunc->setName(name);
                             } else if ((*parsedInstruction)[1] == "ARGS") {
-                                
+                                isArg = true;
                             } else if ((*parsedInstruction)[1] == "DESC") {
-                                
+                                isDesc = true;
                             } else {
                                 throw dg_syntax_error("Invalid START type \"" + (*parsedInstruction)[1] + "\"", fileName, lineNo);
                             }
                         } else if ((*parsedInstruction)[0] == "END") {
+                            if ((*parsedInstruction)[1] == "CLASS") {
+                                delete currClass;
+                                currClass = nullptr;
+                            } else if ((*parsedInstruction)[1] == "FUNC") {
+                                docFile << currFunc->name() << "\n"
+                                        << currFunc->args() << "\n"
+                                        << currFunc->returnType() << "\n"
+                                        << currFunc->desc() << "\n";
 
+                                delete currFunc;
+                                currFunc = nullptr;
+                            } else if ((*parsedInstruction)[1] == "ARGS") {
+                                isArg = false;
+                            } else if ((*parsedInstruction)[1] == "DESC") {
+                                if (currClass && !currFunc) {
+                                    docFile << currClass->desc() << "\n";
+                                }
+                                isDesc = false;
+                            } else {
+                                throw dg_syntax_error("Invalid END type \"" + (*parsedInstruction)[1] + "\"", fileName, lineNo);
+                            }
                         } else if ((*parsedInstruction)[0] == "RETURNS") {
-                            
+                            if (!currFunc) {
+                                throw dg_syntax_error("Cannot use RETURNS outside of a FUNC", fileName, lineNo);
+                            }
+                            std::string returnTypes = (*parsedInstruction)[1];
+                            for (size_t i = 2; i < parsedInstruction->size(); ++i) {
+                                returnTypes += std::string("\n    ") + (*parsedInstruction)[i];
+                            }
+                            currFunc->setReturnType(returnTypes);
                         } else if ((*parsedInstruction)[0] == "BRIEF") {
-                            
+                            if (currFunc) {
+                                currFunc->addDescLine((*parsedInstruction)[1]);
+                            } else if (currClass) {
+                                currClass->addDescLine((*parsedInstruction)[1]);
+                                docFile << currClass->desc() << "\n";
+                            } else {
+                                throw dg_syntax_error("Cannot use BRIEF outside of a FUNC or CLASS", fileName, lineNo);
+                            }
                         }
-                    } else if (isArg) {
-                        if (currFunc == nullptr) {
-                            throw dg_syntax_error("Args defined while not in function", fileName, lineNo);
-                        }
-                    } else if (isDesc) {
-                        if (currFunc == nullptr && currClass == nullptr) {
-                            throw dg_syntax_error("Desc defined while not in class or function", fileName, lineNo);
-                        }
+                    } else {
+                        // If an instruction is not parsed by parseInstruction and we are not
+                        // in an argument/description block.
+                        throw dg_syntax_error("Invalid instruction", fileName, lineNo);
                     }
-                }
+                    delete parsedInstruction;
+                } else if (isArg) {
+                    if (currFunc == nullptr) {
+                        throw dg_syntax_error("Args defined while not in function", fileName, lineNo);
+                    }
+                    currFunc->addArg(parseFuncArg(line));
+                } else if (isDesc) {
+                    if (currFunc) {
+                        currFunc->addDescLine(parseDesc(line));
+                    } else if (currClass) {
+                        currClass->addDescLine(parseDesc(line));
+                    } else {
+                        throw dg_syntax_error("Desc defined while not in class or function", fileName, lineNo);
+                    }
+                } 
+                prevLine = line;
             }
-
-            // Append func/class docs to buffers.
-            funcBuf.insert(funcBuf.end(), functions.begin(), functions.end());
-            classBuf.insert(classBuf.end(), classes.begin(), classes.end());
+        file.close();
+        docFile.close();
         }
     } catch (const unsupported_filetype_error &err) {
         std::cerr << err.what() << std::endl;

@@ -15,7 +15,7 @@ def bar(a, b):
     #dg START FUNC
     #dg START ARGS
     # (int float) a: the first number
-    # (int float) b: the second number
+    # (int float) b
     #dg END ARGS
     #dg RETURNS int float
     #dg START DESC
@@ -35,7 +35,7 @@ class foobar:
         #dg START FUNC
         #dg START ARGS
         # (int float) dollars: How many dollars foobar has.
-        # int age: The age of foobar.
+        # (int) age: The age of foobar.
         #dg END ARGS
         #dg BRIEF Default constructor.
         #dg END FUNC

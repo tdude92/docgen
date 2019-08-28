@@ -7,15 +7,15 @@
 
 int main(int argc, char *argv[]) {
     // Specify how to use docgen.
-    if (argc == 1) {
+    /*if (argc == 1) {
         std::cerr << "Usage: docgen [filename].[extension]" << std::endl;
         exit(EXIT_FAILURE);
     }
+    std::string fileName = argv[1];*/
 
-    std::string fileName = argv[1];
+    std::ofstream ofs;
+    ofs.open("documentation.md", std::ofstream::out | std::ofstream::trunc);
+    genDoc_file("../examples/example.py");
 
-    ClassDoc x;
-
-    std::cout << x.name() << std::endl;
     return 0;
 }

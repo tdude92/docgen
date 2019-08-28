@@ -15,4 +15,6 @@ std::vector<std::string>   *parseInstruction(Instruction instruction);
 Arg                         parseFuncArg(std::string expression);
 std::string                 parseDesc(std::string desc);
 
+void                        genDoc_file(const std::string &fileName);
+
 #endif

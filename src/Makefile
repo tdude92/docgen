@@ -11,4 +11,4 @@ dgparsers.o: dgparsers.cpp dgtypes.hpp dgparsers.hpp
 	g++ -Wall -c dgparsers.cpp -I../include
 
 clean:
-	rm -rf docgen.o dgparsers.o main
+	rm -rf docgen.o dgparsers.o main documentation.md

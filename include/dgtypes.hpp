@@ -64,19 +64,18 @@ class FuncDoc {
     public:
         FuncDoc(ClassDoc *containingClass = nullptr, LANG::Enum lang = LANG::PYTHON):
             lang_(lang),
-            args_("####Arguments:"),
-            desc_("####Description:"),
-            returnType_("####Returns: "),
-            class_(containingClass) {
+            args_("#### Arguments:"),
+            desc_("#### Description:\n    "),
+            returnType_("#### Returns:\n    void") {
                 if (lang == LANG::PYTHON) {
                     name_ = "";
                 }
 
                 // Member functions are h3 while normal functions are h2.
                 if (!containingClass) {
-                    name_ += std::string("##");
+                    name_ += std::string("## ");
                 } else {
-                    name_ += std::string("###");
+                    name_ += std::string("### ");
                 }
         }
 
@@ -84,13 +83,13 @@ class FuncDoc {
             name_ += name;
         }
         void setReturnType(const std::string returnType) {
-            returnType_ = std::string("####Return Type:\n    ") + returnType;
+            returnType_ = std::string("#### Returns:\n    ") + returnType;
         }
         void addArg(const Arg arg) {
             args_ += std::string("\n    ") + arg.types + " " + arg.name + ": " + arg.desc;
         }
         void addDescLine(const std::string line) {
-            desc_ += std::string("\n    ") + line;
+            desc_ += line + " ";
         }
 
         // Getters.
@@ -112,7 +111,6 @@ class FuncDoc {
         std::string args_;
         std::string desc_;
         std::string returnType_;
-        ClassDoc *class_;
 };
 
 
@@ -120,8 +118,8 @@ class ClassDoc {
     public:
         ClassDoc(LANG::Enum lang = LANG::PYTHON):
             lang_(lang),
-            name_("##class "),
-            desc_("####Description:") {}
+            name_("## "),
+            desc_("#### Description:") {}
 
         void setName(const std::string name) {
             name_ += name;
@@ -132,6 +130,9 @@ class ClassDoc {
 
         std::string name() const {
             return name_;
+        }
+        std::string desc() const {
+            return desc_;
         }
     private:
         LANG::Enum  lang_;
