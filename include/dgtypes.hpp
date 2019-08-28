@@ -119,13 +119,13 @@ class ClassDoc {
         ClassDoc(LANG::Enum lang = LANG::PYTHON):
             lang_(lang),
             name_("## "),
-            desc_("#### Description:") {}
+            desc_("#### Description:\n    ") {}
 
         void setName(const std::string name) {
             name_ += name;
         }
         void addDescLine(const std::string line) {
-            desc_ += std::string("\n    ") + line;
+            desc_ += line + " ";
         }
 
         std::string name() const {

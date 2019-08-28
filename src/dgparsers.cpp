@@ -133,15 +133,6 @@ std::vector<std::string> *parseInstruction(Instruction instruction) {
     return parsedInstruction;
 }
 
-template <typename T>
-void freeDocList(std::vector<T*> vec) {
-    // For freeing vectors of dynamically allocated
-    // FuncDoc and ClassDoc objects in a vector.
-    for (T* element : vec) {
-        delete element;
-    }
-}
-
 void genDoc_file(const std::string &fileName) {
     // Concatenate the function/class docs in a file to buffers.
     try {
@@ -226,6 +217,7 @@ void genDoc_file(const std::string &fileName) {
                             }
                         } else if ((*parsedInstruction)[0] == "END") {
                             if ((*parsedInstruction)[1] == "CLASS") {
+                                docFile << "---\n";
                                 delete currClass;
                                 currClass = nullptr;
                             } else if ((*parsedInstruction)[1] == "FUNC") {
@@ -233,6 +225,9 @@ void genDoc_file(const std::string &fileName) {
                                         << currFunc->args() << "\n"
                                         << currFunc->returnType() << "\n"
                                         << currFunc->desc() << "\n";
+                                
+                                if (!currClass)
+                                    docFile << "---\n";
 
                                 delete currFunc;
                                 currFunc = nullptr;
