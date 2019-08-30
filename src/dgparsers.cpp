@@ -5,14 +5,11 @@
 #include <cstring>
 #include <cstdlib>
 
+#include <boost/filesystem.hpp>
+
 #include "dgtypes.hpp"
 #include "dgexcept.hpp"
 #include "dgparsers.hpp"
-
-// TODO: Make sure files of type TYPE::OTHER are skipped.
-// TODO: Use invalidInstructionsFlag.
-
-bool invalidInstructionsFlag = false;
 
 LANG::Enum getFileType(const std::string &fileName) {
     std::string fileExt = "";
@@ -133,15 +130,26 @@ std::vector<std::string> *parseInstruction(Instruction instruction) {
     return parsedInstruction;
 }
 
+inline std::string file_pton(std::string filePath) {
+    // File path to file name.
+    filePath.erase(0, (filePath.find_last_of('/') == filePath.npos) ? 0 : filePath.find_last_of('/') + 1);
+    return filePath;
+}
+
 void genDoc_file(const std::string &fileName) {
     // Concatenate the function/class docs in a file to buffers.
     try {
         if (getFileType(fileName) == LANG::OTHER)
             throw unsupported_filetype_error(fileName);
         else if (getFileType(fileName) == LANG::PYTHON) {
+            std::cout << "Generating documentation for " << file_pton(fileName) << std::endl;
+
             std::ifstream file(fileName);
             std::ofstream docFile;
             docFile.open("documentation.md", std::ios::out | std::ios::app);
+
+            docFile << "# " << file_pton(fileName) << "\n";
+            // Include file name when appending to project documentation.
 
             std::string line;
 
@@ -286,9 +294,24 @@ void genDoc_file(const std::string &fileName) {
         docFile.close();
         }
     } catch (const unsupported_filetype_error &err) {
-        std::cerr << err.what() << std::endl;
+        std::cerr << err.errmsg() << std::endl;
     } catch (const dg_syntax_error &err) {
-        std::cerr << err.what() << std::endl;
+        std::cerr << std::endl << err.errmsg() << std::endl;
         exit(EXIT_FAILURE);
+    }
+}
+
+void genDoc_project(const std::string &projectName) {
+    boost::filesystem::path projectPath(".");
+
+    // Clear documentation.md and write the project name as the title
+    std::ofstream docFile;
+    docFile.open("documentation.md", std::ofstream::out | std::ofstream::trunc);
+    docFile << "# __" << projectName << "__\n";
+    docFile.close();
+
+    boost::filesystem::directory_iterator endItr;
+    for (boost::filesystem::directory_iterator file(projectPath); file != endItr; ++file) {
+        genDoc_file(boost::filesystem::canonical(file->path()).string());
     }
 }

@@ -16,5 +16,6 @@ Arg                         parseFuncArg(std::string expression);
 std::string                 parseDesc(std::string desc);
 
 void                        genDoc_file(const std::string &fileName);
+void                        genDoc_project(const std::string &projectName);
 
 #endif

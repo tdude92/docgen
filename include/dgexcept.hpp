@@ -11,12 +11,9 @@ class unsupported_filetype_error: public std::exception {
         unsupported_filetype_error(std::string file): file_(file) {
             file_.erase(0, (file_.find_last_of('/') == file_.npos) ? 0 : file_.find_last_of('/') + 1);
         }
-
-        const char* what () const throw () {
-            return ("\"" + file_ +  "\" is of an unsupported filetype. Skipping...").c_str();
-        }
-        std::string file() const {
-            return file_;
+        
+        std::string errmsg() const {
+            return (std::string("\"") + file_ +  "\" is of an unsupported filetype. Skipping...").c_str();
         }
     private:
         std::string file_;
@@ -32,7 +29,7 @@ class dg_syntax_error: public std::exception {
                 file_.erase(0, (file_.find_last_of('/') == file_.npos) ? 0 : file_.find_last_of('/') + 1);
         }
 
-        const char* what() const throw() {
+        std::string errmsg() const {
             return ("(" + file_ + ") " + "Syntax error on line " + std::to_string(line_) + ": " + desc_ + ". Stop.").c_str();
         }
     private:
